@@ -1,0 +1,117 @@
+{
+	"name": "df_pedidos",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "pedidos_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "pedidos_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          pedido_id as string,",
+				"          fecha_pedido as string,",
+				"          hora_pedido as string,",
+				"          cliente_id as string,",
+				"          sucursal_id as string,",
+				"          canal as string,",
+				"          tipo_servicio as string,",
+				"          estado_pedido as string,",
+				"          promocion_id as string,",
+				"          subtotal as string,",
+				"          costo_delivery as string,",
+				"          descuento as string,",
+				"          impuesto as string,",
+				"          total_pedido as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(pedido_id = iif(pedido_id=='PED001002' && trim(subtotal)=='486.04','PED001003',trim(pedido_id)),",
+				"          fecha_pedido = trim(fecha_pedido),",
+				"          hora_pedido = trim(hora_pedido),",
+				"          cliente_id = iif(pedido_id=='PED000120','CLI00670',trim(cliente_id)),",
+				"          sucursal_id = trim(sucursal_id),",
+				"          canal = iif(trim(canal)=='APP','Aplicación',trim(canal)),",
+				"          tipo_servicio = trim(tipo_servicio),",
+				"          estado_pedido = trim(estado_pedido),",
+				"          promocion_id = trim(promocion_id),",
+				"          subtotal = trim(subtotal),",
+				"          costo_delivery = trim(costo_delivery),",
+				"          descuento = trim(descuento),",
+				"          impuesto = trim(impuesto),",
+				"          total_pedido = iif(pedido_id=='PED000511','570.78',iif(pedido_id=='PED000777','59.95',iif(pedido_id=='PED001231','164.22',trim(total_pedido))))) ~> derivedColumn1",
+				"derivedColumn1 derive(fecha_pedido = iif(instr(fecha_pedido,'/')>0, toDate(fecha_pedido,'dd/MM/yyyy'), toDate(fecha_pedido,'yyyy-MM-dd')),",
+				"          subtotal = toDecimal(subtotal),",
+				"          costo_delivery = toDecimal(costo_delivery),",
+				"          descuento = toDecimal(descuento),",
+				"          impuesto = toDecimal(impuesto),",
+				"          total_pedido = toDecimal(total_pedido)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          pedido_id as string,",
+				"          fecha_pedido as date,",
+				"          hora_pedido as string,",
+				"          cliente_id as string,",
+				"          sucursal_id as string,",
+				"          canal as string,",
+				"          tipo_servicio as string,",
+				"          estado_pedido as string,",
+				"          promocion_id as string,",
+				"          subtotal as decimal(12,2),",
+				"          costo_delivery as decimal(12,2),",
+				"          descuento as decimal(12,2),",
+				"          impuesto as decimal(12,2),",
+				"          total_pedido as decimal(12,2)",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          pedido_id,",
+				"          fecha_pedido,",
+				"          hora_pedido,",
+				"          cliente_id,",
+				"          sucursal_id,",
+				"          canal,",
+				"          tipo_servicio,",
+				"          estado_pedido,",
+				"          promocion_id,",
+				"          subtotal,",
+				"          costo_delivery,",
+				"          descuento,",
+				"          impuesto,",
+				"          total_pedido",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
